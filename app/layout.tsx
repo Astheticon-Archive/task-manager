@@ -5,8 +5,8 @@ import "./globals.css"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Task Manager",
-  description: "A clean task management app built with Next.js and TypeScript",
+  title: "Simple Tasker — Get things done with minimal fuss",
+  description: "A minimal, beautiful task manager. Organize your work with clarity and calm.",
 }
 
 export default function RootLayout({

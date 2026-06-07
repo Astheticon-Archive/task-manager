@@ -4,61 +4,228 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+/* ─── Design System: Simple Tasker ─────────────────────────────────── */
+
+:root {
+  /* Peach palette — light mode */
+  --color-bg: #FFFAF8;
+  --color-card: #FFFFFF;
+  --color-text: #3A3533;
+  --color-peach: #F4A98A;
+  --color-peach-hover: #E39677;
+  --color-peach-medium: #FAD4C4;
+  --color-peach-low: #FDF0EA;
+  --color-divider: rgba(58, 53, 51, 0.12);
+  --color-shadow: rgba(244, 169, 138, 0.15);
+
+  /* Shadcn compatibility overrides */
+  --background: 30 50% 99%;
+  --foreground: 20 10% 20%;
+  --card: 0 0% 100%;
+  --card-foreground: 20 10% 20%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 20 10% 20%;
+  --primary: 20 80% 75%;
+  --primary-foreground: 20 10% 20%;
+  --secondary: 25 70% 93%;
+  --secondary-foreground: 20 10% 20%;
+  --muted: 25 50% 95%;
+  --muted-foreground: 20 10% 45%;
+  --accent: 25 70% 93%;
+  --accent-foreground: 20 10% 20%;
+  --destructive: 0 72% 55%;
+  --border: 20 20% 88%;
+  --input: 20 20% 88%;
+  --ring: 20 80% 70%;
+  --radius: 0.5rem;
 }
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 15%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 15%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 15%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 217.2 91.2% 59.8%;
-    --radius: 0.3rem;
+.dark {
+  /* Peach palette — dark mode */
+  --color-bg: #1E1A19;
+  --color-card: #2A2523;
+  --color-text: #EAE5E3;
+  --color-peach: #F4A98A;
+  --color-peach-hover: #E39677;
+  --color-peach-medium: #FAD4C4;
+  --color-peach-low: rgba(244, 169, 138, 0.15);
+  --color-divider: rgba(234, 229, 227, 0.12);
+  --color-shadow: rgba(244, 169, 138, 0.10);
+
+  /* Shadcn dark overrides */
+  --background: 15 10% 11%;
+  --foreground: 30 20% 91%;
+  --card: 15 8% 14%;
+  --card-foreground: 30 20% 91%;
+  --popover: 15 8% 14%;
+  --popover-foreground: 30 20% 91%;
+  --primary: 20 80% 75%;
+  --primary-foreground: 20 10% 12%;
+  --secondary: 15 8% 18%;
+  --secondary-foreground: 30 20% 91%;
+  --muted: 15 8% 18%;
+  --muted-foreground: 30 10% 60%;
+  --accent: 15 8% 18%;
+  --accent-foreground: 30 20% 91%;
+  --destructive: 0 62% 40%;
+  --border: 15 8% 22%;
+  --input: 15 8% 22%;
+  --ring: 20 80% 70%;
+}
+
+/* ─── Base Reset ────────────────────────────────────────────────────── */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  min-height: 100vh;
+  transition: background-color 200ms ease, color 200ms ease;
+}
+
+/* ─── Animations & Keyframes ────────────────────────────────────────── */
+
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+@keyframes slide-out-right {
+  from { transform: translateX(0); }
+  to   { transform: translateX(100%); }
+}
+
+@keyframes toast-fade-in-out {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  12%  { opacity: 1; transform: translateX(-50%) translateY(0); }
+  80%  { opacity: 1; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(8px); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes strike {
+  from { text-decoration-color: transparent; }
+  to   { text-decoration-color: var(--color-text); }
+}
+
+/* ─── Scrollbar Utilities ───────────────────────────────────────────── */
+
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* ─── Sidebar Overlay ───────────────────────────────────────────────── */
+
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(30, 26, 25, 0.45);
+  z-index: 40;
+  animation: fade-in 200ms ease;
+}
+
+/* ─── Input / Select / Textarea Base ───────────────────────────────── */
+
+.st-input {
+  width: 100%;
+  background: var(--color-card);
+  color: var(--color-text);
+  border: 1px solid var(--color-divider);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 150ms ease;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.st-input::placeholder {
+  color: var(--color-text);
+  opacity: 0.4;
+}
+
+.st-input:focus {
+  border-color: var(--color-peach);
+}
+
+/* Date input calendar icon color */
+.st-input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0.5;
+  cursor: pointer;
+  filter: invert(0);
+}
+
+.dark .st-input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+/* Select arrow */
+.st-select-wrapper {
+  position: relative;
+}
+
+.st-select-wrapper::after {
+  content: '';
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--color-text);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.st-select-wrapper .st-input {
+  padding-right: 2rem;
+}
+
+/* ─── Header mobile styles ──────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .header-grid {
+    grid-template-columns: 1fr 1fr !important;
+    grid-template-rows: auto auto;
   }
-  .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+
+  /* Counters row: span full width, switch from flex to 2-col grid */
+  .header-counters {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    border-top: 1px solid var(--color-divider);
   }
-  * {
-    border-color: hsl(var(--border));
+
+  /* Each counter cell: drop the inline borderLeft, use top + right borders instead */
+  .header-counter-item {
+    border-left: none !important;
+    border-top: 1px solid var(--color-divider);
   }
-  body {
-    @apply bg-background text-foreground;
-  }
-  html {
-    @apply font-sans;
+
+  .header-counter-item:nth-child(odd) {
+    border-right: 1px solid var(--color-divider);
   }
 }

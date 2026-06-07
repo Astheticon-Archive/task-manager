@@ -3,31 +3,7 @@ import { useState } from "react"
 import { Task } from "@/lib/types"
 import { useTaskStore } from "@/lib/store"
 import { formatDate, isOverdue } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import TaskForm from "./TaskForm"
-import { Pencil, Trash2, CalendarDays, CheckCircle2, Circle } from "lucide-react"
-
-const statusStyles: Record<Task["status"], string> = {
-  TODO: "bg-slate-100 text-slate-600 border border-slate-200",
-  IN_PROGRESS: "bg-blue-50 text-blue-700 border border-blue-200",
-  DONE: "bg-green-50 text-green-700 border border-green-200",
-}
-
-const priorityStyles: Record<Task["priority"], string> = {
-  LOW: "bg-green-50 text-green-700 border border-green-200",
-  MEDIUM: "bg-amber-50 text-amber-700 border border-amber-200",
-  HIGH: "bg-red-50 text-red-700 border border-red-200",
-}
+import { Pencil, Trash2 } from "lucide-react"
 
 const statusLabels: Record<Task["status"], string> = {
   TODO: "To Do",
@@ -35,96 +11,306 @@ const statusLabels: Record<Task["status"], string> = {
   DONE: "Done",
 }
 
-type Props = { task: Task }
+const statusPillStyle: Record<Task["status"], React.CSSProperties> = {
+  TODO: {
+    backgroundColor: "var(--color-peach-low)",
+    color: "var(--color-peach-hover)",
+    border: "1px solid var(--color-peach-medium)",
+  },
+  IN_PROGRESS: {
+    backgroundColor: "var(--color-peach-medium)",
+    color: "var(--color-peach-hover)",
+    border: "1px solid var(--color-peach)",
+  },
+  DONE: {
+    backgroundColor: "var(--color-peach)",
+    color: "#FFFFFF",
+    border: "none",
+  },
+}
 
-export default function TaskRow({ task }: Props) {
-  const { deleteTask, updateTask } = useTaskStore()
-  const [editOpen, setEditOpen] = useState(false)
-  const [deleteOpen, setDeleteOpen] = useState(false)
+const priorityPillStyle: Record<Task["priority"], React.CSSProperties> = {
+  LOW: {
+    backgroundColor: "var(--color-peach-low)",
+    color: "var(--color-text)",
+    opacity: 0.85,
+    border: "1px solid var(--color-divider)",
+  },
+  MEDIUM: {
+    backgroundColor: "var(--color-peach-medium)",
+    color: "var(--color-text)",
+    border: "1px solid var(--color-peach-medium)",
+  },
+  HIGH: {
+    backgroundColor: "var(--color-peach)",
+    color: "#FFFFFF",
+    border: "none",
+  },
+}
+
+type Props = {
+  task: Task
+  onEdit: (task: Task) => void
+  onDelete: (id: string) => void
+}
+
+export default function TaskCard({ task, onEdit, onDelete }: Props) {
+  const { updateTask } = useTaskStore()
+  const [hovered, setHovered] = useState(false)
   const overdue = isOverdue(task.dueDate) && task.status !== "DONE"
+  const isDone = task.status === "DONE"
 
   const toggleStatus = () => {
-    updateTask(task.id, { status: task.status === "DONE" ? "TODO" : "DONE" })
+    updateTask(task.id, {
+      status: isDone ? "TODO" : "DONE",
+    })
   }
 
   return (
-    <>
-      <div className="group flex items-start sm:items-center justify-between gap-4 py-3 border-b border-gray-100 hover:bg-slate-50 transition-colors px-2 -mx-2 rounded-md border-l-2 border-l-transparent hover:border-l-blue-400">
-        
-        <div className="flex items-start sm:items-center gap-3 overflow-hidden">
-          <button 
-            onClick={toggleStatus} 
-            className="mt-0.5 sm:mt-0 shrink-0 text-gray-300 hover:text-gray-500 transition-colors focus:outline-none"
-          >
-            {task.status === "DONE" ? (
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
-            ) : (
-              <Circle className="h-5 w-5" />
-            )}
-          </button>
-          
-          <div className="flex flex-col min-w-0">
-            <span className={`font-medium text-sm truncate ${task.status === "DONE" ? "line-through text-gray-400" : "text-gray-900"}`}>
+    <div
+      style={{ position: "relative", overflow: "hidden" }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {/* Card */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "0.875rem",
+          padding: "0.875rem 1rem",
+          backgroundColor: "var(--color-card)",
+          borderRadius: "10px",
+          border: "1px solid var(--color-divider)",
+          cursor: "default",
+          transition: "box-shadow 200ms ease, transform 200ms ease",
+          boxShadow: hovered
+            ? "0 4px 12px var(--color-shadow)"
+            : "0 1px 3px transparent",
+          transform: hovered ? "translateY(-1px)" : "translateY(0)",
+          opacity: isDone ? 0.6 : 1,
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        {/* Overdue stripe pseudo-element — rendered as inline div */}
+        {overdue && (
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              top: 0,
+              right: 0,
+              bottom: 0,
+              width: "30%",
+              background: `repeating-linear-gradient(
+                45deg,
+                var(--color-peach-low) 0px,
+                var(--color-peach-low) 4px,
+                var(--color-card) 4px,
+                var(--color-card) 12px
+              )`,
+              pointerEvents: "none",
+              opacity: 0.7,
+            }}
+          />
+        )}
+
+        {/* ── Checkbox ── */}
+        <button
+          id={`task-checkbox-${task.id}`}
+          onClick={toggleStatus}
+          aria-label={isDone ? "Mark as to do" : "Mark as done"}
+          style={{
+            flexShrink: 0,
+            width: "20px",
+            height: "20px",
+            borderRadius: "5px",
+            border: isDone ? "none" : "1.5px solid var(--color-divider)",
+            backgroundColor: isDone ? "var(--color-peach)" : "var(--color-card)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            transition: "background-color 150ms ease, border-color 150ms ease",
+            zIndex: 1,
+          }}
+        >
+          {isDone && (
+            <svg
+              width="11"
+              height="9"
+              viewBox="0 0 11 9"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M1 4L4 7L10 1"
+                stroke="#FFFFFF"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          )}
+        </button>
+
+        {/* ── Center: Task Info ── */}
+        <div style={{ flex: 1, minWidth: 0, zIndex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+            <span
+              style={{
+                fontWeight: 600,
+                fontSize: "0.875rem",
+                color: "var(--color-text)",
+                textDecoration: isDone ? "line-through" : "none",
+                transition: "text-decoration 150ms ease",
+                wordBreak: "break-word",
+              }}
+            >
               {task.title}
             </span>
-            {task.description && (
-              <span className="text-xs text-gray-500 truncate mt-0.5">
-                {task.description}
-              </span>
-            )}
           </div>
-        </div>
 
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="hidden sm:flex items-center gap-2">
-            <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${priorityStyles[task.priority]}`}>
-              {task.priority}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.4rem",
+              marginTop: "0.35rem",
+              flexWrap: "wrap",
+            }}
+          >
+            {/* Status pill */}
+            <span
+              style={{
+                fontSize: "0.65rem",
+                fontWeight: 600,
+                padding: "0.15rem 0.55rem",
+                borderRadius: "9999px",
+                letterSpacing: "0.03em",
+                ...statusPillStyle[task.status],
+              }}
+            >
+              {statusLabels[task.status]}
             </span>
-            
+
+            {/* Priority pill */}
+            <span
+              style={{
+                fontSize: "0.65rem",
+                fontWeight: 600,
+                padding: "0.15rem 0.55rem",
+                borderRadius: "9999px",
+                letterSpacing: "0.03em",
+                ...priorityPillStyle[task.priority],
+              }}
+            >
+              {task.priority.charAt(0) + task.priority.slice(1).toLowerCase()}
+            </span>
+
+            {/* Due date — small, below pills on mobile */}
             {task.dueDate && (
-              <span className={`flex items-center gap-1 text-[11px] ${overdue ? "text-red-500 font-medium" : "text-gray-500"}`}>
-                <CalendarDays className="h-3 w-3" />
+              <span
+                suppressHydrationWarning
+                style={{
+                  fontSize: "0.7rem",
+                  opacity: overdue ? 1 : 0.45,
+                  fontWeight: overdue ? 600 : 400,
+                  color: overdue ? "var(--color-peach-hover)" : "var(--color-text)",
+                }}
+              >
+                {overdue ? "⚠ " : ""}
                 {formatDate(task.dueDate)}
               </span>
             )}
-            
-            <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${statusStyles[task.status]}`}>
-              {statusLabels[task.status]}
-            </span>
           </div>
+        </div>
 
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-gray-900" onClick={() => setEditOpen(true)}>
-              <Pencil className="h-3.5 w-3.5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-red-600" onClick={() => setDeleteOpen(true)}>
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
+        {/* ── Right: Due date (desktop) + hover actions ── */}
+        <div
+          style={{
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: "0.25rem",
+            position: "relative",
+            zIndex: 1,
+          }}
+        >
+          {/* Actions: fade in on hover */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.125rem",
+              opacity: hovered ? 1 : 0,
+              transition: "opacity 200ms ease",
+              pointerEvents: hovered ? "auto" : "none",
+            }}
+          >
+            <button
+              id={`edit-task-${task.id}`}
+              onClick={() => onEdit(task)}
+              aria-label="Edit task"
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "var(--color-text)",
+                opacity: 0.6,
+                padding: "0.3rem",
+                borderRadius: "5px",
+                display: "flex",
+                alignItems: "center",
+                transition: "color 150ms ease, opacity 150ms ease",
+              }}
+              onMouseEnter={(e) => {
+                const btn = e.currentTarget as HTMLButtonElement
+                btn.style.color = "var(--color-peach)"
+                btn.style.opacity = "1"
+              }}
+              onMouseLeave={(e) => {
+                const btn = e.currentTarget as HTMLButtonElement
+                btn.style.color = "var(--color-text)"
+                btn.style.opacity = "0.6"
+              }}
+            >
+              <Pencil size={14} strokeWidth={2} />
+            </button>
+
+            <button
+              id={`delete-task-${task.id}`}
+              onClick={() => onDelete(task.id)}
+              aria-label="Delete task"
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "var(--color-text)",
+                opacity: 0.6,
+                padding: "0.3rem",
+                borderRadius: "5px",
+                display: "flex",
+                alignItems: "center",
+                transition: "color 150ms ease, opacity 150ms ease",
+              }}
+              onMouseEnter={(e) => {
+                const btn = e.currentTarget as HTMLButtonElement
+                btn.style.color = "var(--color-peach)"
+                btn.style.opacity = "1"
+              }}
+              onMouseLeave={(e) => {
+                const btn = e.currentTarget as HTMLButtonElement
+                btn.style.color = "var(--color-text)"
+                btn.style.opacity = "0.6"
+              }}
+            >
+              <Trash2 size={14} strokeWidth={2} />
+            </button>
           </div>
         </div>
       </div>
-
-      <TaskForm open={editOpen} onClose={() => setEditOpen(false)} task={task} />
-
-      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AlertDialogContent className="sm:max-w-[400px]">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-base font-semibold">Delete Task?</AlertDialogTitle>
-            <AlertDialogDescription className="text-sm">
-              &quot;{task.title}&quot; will be permanently deleted.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="h-8 text-xs font-medium">Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="h-8 text-xs font-medium bg-red-600 text-white hover:bg-red-700"
-              onClick={() => deleteTask(task.id)}
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+    </div>
   )
 }

@@ -1,4 +1,5 @@
 "use client"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useTaskStore } from "@/lib/store"
 import { TaskStatus, TaskPriority } from "@/lib/types"
 
@@ -9,51 +10,163 @@ const statusOptions: { label: string; value: TaskStatus | "ALL" }[] = [
   { label: "Done", value: "DONE" },
 ]
 
-const priorityOptions: { label: string; value: TaskPriority | "ALL" }[] = [
-  { label: "All", value: "ALL" },
-  { label: "Low", value: "LOW" },
-  { label: "Medium", value: "MEDIUM" },
-  { label: "High", value: "HIGH" },
+const priorityOptions: { label: string; value: TaskPriority | "ALL"; bg: string; activeBg: string }[] = [
+  { label: "All", value: "ALL", bg: "transparent", activeBg: "var(--color-peach-low)" },
+  { label: "Low", value: "LOW", bg: "transparent", activeBg: "var(--color-peach-low)" },
+  { label: "Medium", value: "MEDIUM", bg: "transparent", activeBg: "var(--color-peach-medium)" },
+  { label: "High", value: "HIGH", bg: "transparent", activeBg: "var(--color-peach)" },
+]
+
+const sortOptions = [
+  { label: "Created At", value: "createdAt" as const },
+  { label: "Due Date", value: "dueDate" as const },
+  { label: "Priority", value: "priority" as const },
 ]
 
 export default function TaskFilters() {
-  const { filters, setFilter } = useTaskStore()
+  const { filters, setFilter, searchQuery, setSearch, sortBy, setSort } =
+    useTaskStore()
+  const [localSearch, setLocalSearch] = useState(searchQuery)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleSearch = useCallback(
+    (value: string) => {
+      setLocalSearch(value)
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+      debounceRef.current = setTimeout(() => {
+        setSearch(value)
+      }, 200)
+    },
+    [setSearch]
+  )
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [])
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-2">
-      {/* Status tabs */}
-      <div className="flex items-center gap-1 -ml-2">
-        {statusOptions.map((opt) => (
-          <button
-            key={opt.value}
-            onClick={() => setFilter({ status: opt.value })}
-            className={`px-3 py-1.5 text-sm font-medium transition-colors ${
-              filters.status === opt.value
-                ? "border-b-2 border-blue-500 text-blue-600"
-                : "text-slate-500 hover:text-slate-900 border-b-2 border-transparent hover:border-slate-200"
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
+    <div
+      style={{
+        maxWidth: "900px",
+        margin: "0 auto",
+        padding: "0 1.5rem",
+        display: "flex",
+        flexDirection: "column",
+        gap: "0.5rem",
+      }}
+    >
+      {/* ── Row 1: Status Tabs ── */}
+      <div
+        className="scrollbar-none"
+        style={{
+          display: "flex",
+          gap: "0.375rem",
+          overflowX: "auto",
+          paddingBottom: "0.125rem",
+        }}
+      >
+        {statusOptions.map((opt) => {
+          const active = filters.status === opt.value
+          return (
+            <button
+              key={opt.value}
+              id={`status-filter-${opt.value}`}
+              onClick={() => setFilter({ status: opt.value })}
+              style={{
+                padding: "0.35rem 1rem",
+                borderRadius: "9999px",
+                border: active
+                  ? "1px solid var(--color-peach)"
+                  : "1px solid transparent",
+                backgroundColor: active ? "var(--color-peach-low)" : "transparent",
+                color: active ? "var(--color-peach)" : "var(--color-text)",
+                opacity: active ? 1 : 0.6,
+                fontSize: "0.8rem",
+                fontWeight: active ? 600 : 500,
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+                transition: "all 150ms ease",
+              }}
+            >
+              {opt.label}
+            </button>
+          )
+        })}
       </div>
 
-      {/* Priority pills */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs font-medium text-gray-400 uppercase tracking-wider mr-1">Priority</span>
-        {priorityOptions.map((opt) => (
-          <button
-            key={opt.value}
-            onClick={() => setFilter({ priority: opt.value })}
-            className={`px-2 py-1 text-xs font-medium rounded-full border transition-colors ${
-              filters.priority === opt.value
-                ? "bg-blue-600 border-blue-600 text-white"
-                : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
-            }`}
+      {/* ── Row 2: Priority Pills + Search + Sort ── */}
+      <div
+        className="scrollbar-none"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem",
+          overflowX: "auto",
+        }}
+      >
+        {/* Priority pills */}
+        {priorityOptions.map((opt) => {
+          const active = filters.priority === opt.value
+          return (
+            <button
+              key={opt.value}
+              id={`priority-filter-${opt.value}`}
+              onClick={() => setFilter({ priority: opt.value })}
+              style={{
+                padding: "0.3rem 0.85rem",
+                borderRadius: "9999px",
+                border: active
+                  ? "1px solid var(--color-peach)"
+                  : "1px solid var(--color-divider)",
+                backgroundColor: active ? opt.activeBg : "transparent",
+                color: "var(--color-text)",
+                opacity: active ? 1 : 0.6,
+                fontSize: "0.75rem",
+                fontWeight: active ? 600 : 500,
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+                transition: "all 150ms ease",
+              }}
+            >
+              {opt.label}
+            </button>
+          )
+        })}
+
+        {/* Spacer */}
+        <div style={{ flex: 1, minWidth: "0.5rem" }} />
+
+        {/* Search */}
+        <input
+          id="task-search-input"
+          type="text"
+          placeholder="Search tasks..."
+          value={localSearch}
+          onChange={(e) => handleSearch(e.target.value)}
+          className="st-input"
+          style={{ width: "180px", flexShrink: 0 }}
+        />
+
+        {/* Sort */}
+        <div className="st-select-wrapper" style={{ flexShrink: 0 }}>
+          <select
+            id="task-sort-select"
+            value={sortBy}
+            onChange={(e) =>
+              setSort(e.target.value as "dueDate" | "priority" | "createdAt")
+            }
+            className="st-input"
+            style={{ width: "130px" }}
           >
-            {opt.label}
-          </button>
-        ))}
+            {sortOptions.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
     </div>
   )
